@@ -17,7 +17,7 @@ This project consists of a simple yet powerful Remote Access Trojan (RAT) writte
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/RAT-Project.git
+   git clone https://github.com/JayGaba/RAT-Project.git
    cd RAT-Project
    
 2. **Install dependencies:**
