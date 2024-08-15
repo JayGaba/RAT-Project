@@ -67,7 +67,7 @@ The client.py script connects to the attacker's machine and waits for commands. 
 - **Clipboard History**
 - **Browser History**
 - **Screen Capture**
-- **Microphone Access**
+- **Microphone Access**\
 ~~- **Access Webcam**: Add the functionality to access webcam of the victim machine.~~
 
 ## Disclaimer
