@@ -66,9 +66,9 @@ The client.py script connects to the attacker's machine and waits for commands. 
 - **Anti-Detection**: Implement techniques to evade detection by antivirus software.
 - **Clipboard History**
 - **Browser History**
-- **Screen Capture**
-- **Microphone Access**\
-~~- **Access Webcam**: Add the functionality to access webcam of the victim machine.~~
+- ~~**Screen Capture**~~
+- ~~**Microphone Access**~~
+- ~~**Access Webcam**: Add the functionality to access webcam of the victim machine.~~
 
 ## Disclaimer
 This project is for educational purposes only. Use it responsibly and only on systems you own or have permission to test.
